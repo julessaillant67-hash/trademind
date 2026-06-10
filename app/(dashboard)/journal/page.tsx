@@ -9,17 +9,9 @@ export default function JournalPage() {
   const [loading, setLoading] = useState(false)
   const [editingTrade, setEditingTrade] = useState<any>(null)
   const [form, setForm] = useState({
-    asset: '',
-    direction: 'LONG',
-    entry_price: '',
-    exit_price: '',
-    lot_size: '',
-    pnl: '',
-    emotion_before: '3',
-    emotion_after: '3',
-    followed_plan: true,
-    notes: '',
-    opened_at: new Date().toISOString().slice(0, 16),
+    asset: '', direction: 'LONG', entry_price: '', exit_price: '',
+    lot_size: '', pnl: '', emotion_before: '3', emotion_after: '3',
+    followed_plan: true, notes: '', opened_at: new Date().toISOString().slice(0, 16),
   })
 
   const supabase = createClient()
@@ -27,36 +19,43 @@ export default function JournalPage() {
   useEffect(() => { loadTrades() }, [])
 
   async function loadTrades() {
-    const { data } = await supabase
-      .from('trades')
-      .select('*')
-      .order('opened_at', { ascending: false })
+    const { data } = await supabase.from('trades').select('*').order('opened_at', { ascending: false })
     if (data) setTrades(data)
+  }
+
+  function calculerPnl(asset: string, direction: string, entry: string, exit: string, lot: string) {
+    if (!entry || !exit || !lot) return ''
+    const entryPrice = parseFloat(entry)
+    const exitPrice = parseFloat(exit)
+    const lotSize = parseFloat(lot)
+    if (isNaN(entryPrice) || isNaN(exitPrice) || isNaN(lotSize)) return ''
+    const diff = direction === 'LONG' ? exitPrice - entryPrice : entryPrice - exitPrice
+    const a = asset.toUpperCase()
+    let pipSize = 0.0001
+    let pipsValue = 10
+    if (a.includes('JPY')) { pipSize = 0.01; pipsValue = 1000 }
+    if (a.includes('XAU') || a === 'OR' || a === 'GOLD') { pipSize = 0.1; pipsValue = 10 }
+    if (a.includes('BTC')) { pipSize = 1; pipsValue = 1 }
+    if (a.includes('ETH')) { pipSize = 0.1; pipsValue = 1 }
+    if (a.includes('NAS') || a.includes('SPX') || a.includes('DAX') || a.includes('CAC')) { pipSize = 1; pipsValue = 1 }
+    const pips = diff / pipSize
+    return (pips * pipsValue * lotSize).toFixed(2)
   }
 
   function openAddForm() {
     setEditingTrade(null)
-    setForm({
-      asset: '', direction: 'LONG', entry_price: '', exit_price: '',
-      lot_size: '', pnl: '', emotion_before: '3', emotion_after: '3',
-      followed_plan: true, notes: '', opened_at: new Date().toISOString().slice(0, 16),
-    })
+    setForm({ asset: '', direction: 'LONG', entry_price: '', exit_price: '', lot_size: '', pnl: '', emotion_before: '3', emotion_after: '3', followed_plan: true, notes: '', opened_at: new Date().toISOString().slice(0, 16) })
     setShowForm(true)
   }
 
   function openEditForm(trade: any) {
     setEditingTrade(trade)
     setForm({
-      asset: trade.asset || '',
-      direction: trade.direction || 'LONG',
-      entry_price: trade.entry_price?.toString() || '',
-      exit_price: trade.exit_price?.toString() || '',
-      lot_size: trade.lot_size?.toString() || '',
-      pnl: trade.pnl?.toString() || '',
-      emotion_before: trade.emotion_before?.toString() || '3',
-      emotion_after: trade.emotion_after?.toString() || '3',
-      followed_plan: trade.followed_plan ?? true,
-      notes: trade.notes || '',
+      asset: trade.asset || '', direction: trade.direction || 'LONG',
+      entry_price: trade.entry_price?.toString() || '', exit_price: trade.exit_price?.toString() || '',
+      lot_size: trade.lot_size?.toString() || '', pnl: trade.pnl?.toString() || '',
+      emotion_before: trade.emotion_before?.toString() || '3', emotion_after: trade.emotion_after?.toString() || '3',
+      followed_plan: trade.followed_plan ?? true, notes: trade.notes || '',
       opened_at: trade.opened_at ? new Date(trade.opened_at).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
     })
     setShowForm(true)
@@ -66,29 +65,21 @@ export default function JournalPage() {
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-
     const payload = {
-      user_id: user.id,
-      asset: form.asset,
-      direction: form.direction,
+      user_id: user.id, asset: form.asset, direction: form.direction,
       entry_price: parseFloat(form.entry_price),
       exit_price: form.exit_price ? parseFloat(form.exit_price) : null,
       lot_size: form.lot_size ? parseFloat(form.lot_size) : null,
       pnl: form.pnl ? parseFloat(form.pnl) : null,
-      emotion_before: parseInt(form.emotion_before),
-      emotion_after: parseInt(form.emotion_after),
-      followed_plan: form.followed_plan,
-      notes: form.notes,
-      opened_at: new Date(form.opened_at).toISOString(),
-      source: 'manual'
+      emotion_before: parseInt(form.emotion_before), emotion_after: parseInt(form.emotion_after),
+      followed_plan: form.followed_plan, notes: form.notes,
+      opened_at: new Date(form.opened_at).toISOString(), source: 'manual'
     }
-
     if (editingTrade) {
       await supabase.from('trades').update(payload).eq('id', editingTrade.id)
     } else {
       await supabase.from('trades').insert(payload)
     }
-
     setShowForm(false)
     setEditingTrade(null)
     loadTrades()
@@ -101,18 +92,10 @@ export default function JournalPage() {
     loadTrades()
   }
 
-  const inputStyle = {
-    width: '100%', background: '#141920',
-    border: '1px solid rgba(255,255,255,0.08)',
-    borderRadius: '8px', padding: '10px 14px',
-    color: '#dfe3ed', fontSize: '14px', outline: 'none',
-    fontFamily: 'sans-serif'
-  }
+  const pnlAuto = calculerPnl(form.asset, form.direction, form.entry_price, form.exit_price, form.lot_size)
 
-  const labelStyle = {
-    color: '#7a8299', fontSize: '13px',
-    display: 'block' as const, marginBottom: '6px'
-  }
+  const inputStyle = { width: '100%', background: '#141920', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '10px 14px', color: '#dfe3ed', fontSize: '14px', outline: 'none', fontFamily: 'sans-serif' }
+  const labelStyle = { color: '#7a8299', fontSize: '13px', display: 'block' as const, marginBottom: '6px' }
 
   return (
     <div style={{ minHeight: '100vh', background: '#080a0d', color: '#dfe3ed', fontFamily: 'sans-serif', padding: '40px' }}>
@@ -139,7 +122,7 @@ export default function JournalPage() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '16px' }}>
               <div>
                 <label style={labelStyle}>Actif</label>
-                <input style={inputStyle} placeholder="EUR/USD, BTC..." value={form.asset} onChange={e => setForm({...form, asset: e.target.value})} />
+                <input style={inputStyle} placeholder="EUR/USD, XAU/USD, BTC..." value={form.asset} onChange={e => setForm({...form, asset: e.target.value})} />
               </div>
               <div>
                 <label style={labelStyle}>Direction</label>
@@ -161,8 +144,22 @@ export default function JournalPage() {
                 <input style={inputStyle} placeholder="1.0847" value={form.exit_price} onChange={e => setForm({...form, exit_price: e.target.value})} />
               </div>
               <div>
-                <label style={labelStyle}>P&L (€)</label>
-                <input style={inputStyle} placeholder="+130" value={form.pnl} onChange={e => setForm({...form, pnl: e.target.value})} />
+                <label style={labelStyle}>P&L (€) — calculé auto</label>
+                <input
+                  style={{...inputStyle, background: form.pnl && parseFloat(form.pnl) > 0 ? 'rgba(34,211,160,0.08)' : form.pnl && parseFloat(form.pnl) < 0 ? 'rgba(240,82,82,0.08)' : '#141920'}}
+                  placeholder="Calculé automatiquement"
+                  value={form.pnl}
+                  onChange={e => setForm({...form, pnl: e.target.value})}
+                  onBlur={() => { if (!form.pnl && pnlAuto) setForm(f => ({...f, pnl: pnlAuto})) }}
+                />
+                {pnlAuto && (
+                  <div style={{ fontSize: '11px', color: '#7a8299', marginTop: '4px' }}>
+                    Estimé : <span style={{ color: parseFloat(pnlAuto) > 0 ? '#22d3a0' : '#f05252', fontWeight: '600' }}>{parseFloat(pnlAuto) > 0 ? '+' : ''}{pnlAuto}€</span>
+                    <button onClick={() => setForm(f => ({...f, pnl: pnlAuto}))} style={{ marginLeft: '8px', background: 'rgba(0,229,176,0.1)', border: '1px solid rgba(0,229,176,0.2)', borderRadius: '4px', padding: '1px 6px', color: '#00e5b0', fontSize: '10px', cursor: 'pointer' }}>
+                      Utiliser
+                    </button>
+                  </div>
+                )}
               </div>
               <div>
                 <label style={labelStyle}>Date / Heure</label>
