@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 export default function JournalPage() {
   const [showForm, setShowForm] = useState(false)
   const [trades, setTrades] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
+  const [editingTrade, setEditingTrade] = useState<any>(null)
   const [form, setForm] = useState({
     asset: '',
     direction: 'LONG',
@@ -23,12 +24,50 @@ export default function JournalPage() {
 
   const supabase = createClient()
 
+  useEffect(() => { loadTrades() }, [])
+
+  async function loadTrades() {
+    const { data } = await supabase
+      .from('trades')
+      .select('*')
+      .order('opened_at', { ascending: false })
+    if (data) setTrades(data)
+  }
+
+  function openAddForm() {
+    setEditingTrade(null)
+    setForm({
+      asset: '', direction: 'LONG', entry_price: '', exit_price: '',
+      lot_size: '', pnl: '', emotion_before: '3', emotion_after: '3',
+      followed_plan: true, notes: '', opened_at: new Date().toISOString().slice(0, 16),
+    })
+    setShowForm(true)
+  }
+
+  function openEditForm(trade: any) {
+    setEditingTrade(trade)
+    setForm({
+      asset: trade.asset || '',
+      direction: trade.direction || 'LONG',
+      entry_price: trade.entry_price?.toString() || '',
+      exit_price: trade.exit_price?.toString() || '',
+      lot_size: trade.lot_size?.toString() || '',
+      pnl: trade.pnl?.toString() || '',
+      emotion_before: trade.emotion_before?.toString() || '3',
+      emotion_after: trade.emotion_after?.toString() || '3',
+      followed_plan: trade.followed_plan ?? true,
+      notes: trade.notes || '',
+      opened_at: trade.opened_at ? new Date(trade.opened_at).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
+    })
+    setShowForm(true)
+  }
+
   async function handleSubmit() {
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const { error } = await supabase.from('trades').insert({
+    const payload = {
       user_id: user.id,
       asset: form.asset,
       direction: form.direction,
@@ -42,41 +81,37 @@ export default function JournalPage() {
       notes: form.notes,
       opened_at: new Date(form.opened_at).toISOString(),
       source: 'manual'
-    })
-
-    if (!error) {
-      setShowForm(false)
-      loadTrades()
     }
+
+    if (editingTrade) {
+      await supabase.from('trades').update(payload).eq('id', editingTrade.id)
+    } else {
+      await supabase.from('trades').insert(payload)
+    }
+
+    setShowForm(false)
+    setEditingTrade(null)
+    loadTrades()
     setLoading(false)
   }
 
-  async function loadTrades() {
-    const { data } = await supabase
-      .from('trades')
-      .select('*')
-      .order('opened_at', { ascending: false })
-    if (data) setTrades(data)
+  async function handleDelete(id: string) {
+    if (!confirm('Supprimer ce trade ?')) return
+    await supabase.from('trades').delete().eq('id', id)
+    loadTrades()
   }
 
-  useState(() => { loadTrades() })
-
   const inputStyle = {
-    width: '100%',
-    background: '#141920',
+    width: '100%', background: '#141920',
     border: '1px solid rgba(255,255,255,0.08)',
-    borderRadius: '8px',
-    padding: '10px 14px',
-    color: '#dfe3ed',
-    fontSize: '14px',
-    outline: 'none'
+    borderRadius: '8px', padding: '10px 14px',
+    color: '#dfe3ed', fontSize: '14px', outline: 'none',
+    fontFamily: 'sans-serif'
   }
 
   const labelStyle = {
-    color: '#7a8299',
-    fontSize: '13px',
-    display: 'block' as const,
-    marginBottom: '6px'
+    color: '#7a8299', fontSize: '13px',
+    display: 'block' as const, marginBottom: '6px'
   }
 
   return (
@@ -90,17 +125,16 @@ export default function JournalPage() {
             </div>
             <div style={{ color: '#7a8299', marginTop: '4px' }}>Journal de trading</div>
           </div>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            style={{ background: '#00e5b0', border: 'none', borderRadius: '8px', padding: '10px 20px', color: '#000', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}
-          >
+          <button onClick={openAddForm} style={{ background: '#00e5b0', border: 'none', borderRadius: '8px', padding: '10px 20px', color: '#000', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}>
             + Ajouter un trade
           </button>
         </div>
 
         {showForm && (
           <div style={{ background: '#0e1117', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '24px', marginBottom: '24px' }}>
-            <div style={{ fontSize: '16px', fontWeight: '500', marginBottom: '20px' }}>Nouveau trade</div>
+            <div style={{ fontSize: '16px', fontWeight: '500', marginBottom: '20px' }}>
+              {editingTrade ? '✏️ Modifier le trade' : '+ Nouveau trade'}
+            </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '16px' }}>
               <div>
@@ -168,7 +202,7 @@ export default function JournalPage() {
 
             <div style={{ display: 'flex', gap: '10px' }}>
               <button onClick={handleSubmit} disabled={loading} style={{ background: '#00e5b0', border: 'none', borderRadius: '8px', padding: '10px 24px', color: '#000', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}>
-                {loading ? 'Enregistrement...' : 'Enregistrer le trade'}
+                {loading ? 'Enregistrement...' : editingTrade ? 'Mettre à jour' : 'Enregistrer'}
               </button>
               <button onClick={() => setShowForm(false)} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '10px 24px', color: '#7a8299', fontSize: '14px', cursor: 'pointer' }}>
                 Annuler
@@ -186,7 +220,7 @@ export default function JournalPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                  {['Actif', 'Direction', 'Entrée', 'Sortie', 'P&L', 'Émotion', 'Date'].map(h => (
+                  {['Actif', 'Direction', 'Entrée', 'Sortie', 'P&L', 'Émotion', 'Date', 'Actions'].map(h => (
                     <th key={h} style={{ padding: '12px 16px', textAlign: 'left', color: '#7a8299', fontWeight: '500' }}>{h}</th>
                   ))}
                 </tr>
@@ -207,6 +241,16 @@ export default function JournalPage() {
                     </td>
                     <td style={{ padding: '12px 16px' }}>{trade.emotion_before}/5</td>
                     <td style={{ padding: '12px 16px', color: '#7a8299' }}>{new Date(trade.opened_at).toLocaleDateString('fr-FR')}</td>
+                    <td style={{ padding: '12px 16px' }}>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button onClick={() => openEditForm(trade)} style={{ background: 'rgba(0,229,176,0.1)', border: '1px solid rgba(0,229,176,0.2)', borderRadius: '6px', padding: '4px 10px', color: '#00e5b0', fontSize: '12px', cursor: 'pointer' }}>
+                          ✏️ Modifier
+                        </button>
+                        <button onClick={() => handleDelete(trade.id)} style={{ background: 'rgba(240,82,82,0.1)', border: '1px solid rgba(240,82,82,0.2)', borderRadius: '6px', padding: '4px 10px', color: '#f05252', fontSize: '12px', cursor: 'pointer' }}>
+                          🗑️ Supprimer
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>

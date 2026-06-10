@@ -6,12 +6,12 @@ import { createClient } from '@/lib/supabase/client'
 export default function DashboardPage() {
   const [stats, setStats] = useState({
     totalPnl: 0,
+    weekPnl: 0,
     winRate: 0,
     tradeCount: 0,
     psychScore: 0
   })
   const [recentTrades, setRecentTrades] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     loadStats()
@@ -24,22 +24,30 @@ export default function DashboardPage() {
       .select('*')
       .order('opened_at', { ascending: false })
 
-    if (trades && trades.length > 0) {
-      const totalPnl = trades.reduce((sum, t) => sum + (t.pnl || 0), 0)
-      const winningTrades = trades.filter(t => t.pnl > 0).length
-      const winRate = Math.round((winningTrades / trades.length) * 100)
-      const psychScore = winRate > 70 ? 82 : winRate > 50 ? 65 : 45
+    if (!trades || trades.length === 0) return
 
-      setStats({
-        totalPnl,
-        winRate,
-        tradeCount: trades.length,
-        psychScore: trades.length > 0 ? psychScore : 0
-      })
-      setRecentTrades(trades.slice(0, 5))
-    }
-    setLoading(false)
+    const totalPnl = trades.reduce((sum, t) => sum + (t.pnl || 0), 0)
+    const winningTrades = trades.filter(t => t.pnl > 0).length
+    const winRate = Math.round((winningTrades / trades.length) * 100)
+    const psychScore = winRate > 70 ? 82 : winRate > 50 ? 65 : 45
+
+    const oneWeekAgo = new Date()
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+    const weekPnl = trades
+      .filter(t => new Date(t.opened_at) >= oneWeekAgo)
+      .reduce((sum, t) => sum + (t.pnl || 0), 0)
+
+    setStats({ totalPnl, weekPnl, winRate, tradeCount: trades.length, psychScore })
+    setRecentTrades(trades.slice(0, 5))
   }
+
+  const cards = [
+    { label: 'P&L SEMAINE', value: `${stats.weekPnl > 0 ? '+' : ''}${stats.weekPnl.toFixed(2)}€`, color: stats.weekPnl >= 0 ? '#22d3a0' : '#f05252' },
+    { label: 'P&L TOTAL', value: `${stats.totalPnl > 0 ? '+' : ''}${stats.totalPnl.toFixed(2)}€`, color: stats.totalPnl >= 0 ? '#22d3a0' : '#f05252' },
+    { label: 'WIN RATE', value: `${stats.winRate}%`, color: stats.winRate >= 50 ? '#22d3a0' : '#f05252' },
+    { label: 'TRADES', value: String(stats.tradeCount), color: '#dfe3ed' },
+    { label: 'SCORE PSYCHO', value: stats.tradeCount > 0 ? `${stats.psychScore}/100` : '--/100', color: stats.psychScore >= 70 ? '#22d3a0' : '#f59e0b' },
+  ]
 
   return (
     <div style={{ minHeight: '100vh', background: '#080a0d', color: '#dfe3ed', fontFamily: 'sans-serif', padding: '40px' }}>
@@ -52,16 +60,11 @@ export default function DashboardPage() {
           <div style={{ color: '#7a8299', marginTop: '4px' }}>Bienvenue sur ton dashboard</div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
-          {[
-            { label: 'P&L CE MOIS', value: `${stats.totalPnl > 0 ? '+' : ''}${stats.totalPnl.toFixed(2)}€`, color: stats.totalPnl >= 0 ? '#22d3a0' : '#f05252' },
-            { label: 'WIN RATE', value: `${stats.winRate}%`, color: stats.winRate >= 50 ? '#22d3a0' : '#f05252' },
-            { label: 'TRADES', value: stats.tradeCount, color: '#dfe3ed' },
-            { label: 'SCORE PSYCHO', value: stats.tradeCount > 0 ? `${stats.psychScore}/100` : '--/100', color: stats.psychScore >= 70 ? '#22d3a0' : stats.psychScore >= 50 ? '#f59e0b' : '#f05252' },
-          ].map(stat => (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px', marginBottom: '24px' }}>
+          {cards.map(stat => (
             <div key={stat.label} style={{ background: '#0e1117', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '20px' }}>
               <div style={{ fontSize: '11px', color: '#7a8299', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '8px' }}>{stat.label}</div>
-              <div style={{ fontSize: '28px', fontWeight: '700', color: stat.color }}>{stat.value}</div>
+              <div style={{ fontSize: '24px', fontWeight: '700', color: stat.color }}>{stat.value}</div>
             </div>
           ))}
         </div>
