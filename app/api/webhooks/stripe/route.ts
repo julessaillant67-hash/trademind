@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   }
 
   if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as Stripe.CheckoutSession
+    const session = event.data.object as Stripe.Checkout.Session
     const email = session.customer_email
     const priceId = session.line_items?.data[0]?.price?.id || ''
     const plan = getPlanFromPriceId(priceId)
