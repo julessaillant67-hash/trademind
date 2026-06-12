@@ -1,7 +1,23 @@
 'use client'
 
 import { useState } from 'react'
+import { usePlan } from '@/lib/usePlan'
 
+export default function AnalysePage() {
+  const { plan, canAccess } = usePlan()
+
+  if (!canAccess.analyse) return (
+    <div style={{ minHeight: '100vh', background: '#080a0d', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
+      <div style={{ background: '#0e1117', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '40px', textAlign: 'center', maxWidth: '400px' }}>
+        <div style={{ fontSize: '40px', marginBottom: '16px' }}>🔒</div>
+        <div style={{ fontSize: '18px', fontWeight: '600', color: '#dfe3ed', marginBottom: '8px' }}>Fonctionnalité Starter</div>
+        <div style={{ fontSize: '14px', color: '#7a8299', marginBottom: '24px', lineHeight: '1.6' }}>L'analyse IA est disponible à partir du plan Starter à 9,99€/mois.</div>
+        <a href="/settings" style={{ display: 'inline-block', background: '#00e5b0', color: '#000', fontWeight: '700', fontSize: '14px', padding: '12px 28px', borderRadius: '10px', textDecoration: 'none' }}>
+          Voir les plans →
+        </a>
+      </div>
+    </div>
+  )
 export default function AnalysePage() {
   const [loading, setLoading] = useState(false)
   const [analysis, setAnalysis] = useState<any>(null)
