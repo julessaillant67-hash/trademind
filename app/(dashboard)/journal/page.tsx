@@ -44,7 +44,7 @@ export default function JournalPage() {
 
   function openAddForm() {
     setEditingTrade(null)
-    setForm({ asset: '', direction: 'LONG', entry_price: '', exit_price: '', lot_size: '', pnl: '', emotion_before: '3', emotion_after: '3', followed_plan: true, notes: '', opened_at: new Date().toISOString().slice(0, 16) })
+    setForm({ asset: '', direction: 'LONG', entry_price: '', exit_price: '', lot_size: '', pnl: '', emotion_before: '3', emotion_after: '3', followed_plan: true, notes: '', tradingview_url: '', opened_at: new Date().toISOString().slice(0, 16) })
     setShowForm(true)
   }
 
@@ -193,7 +193,7 @@ export default function JournalPage() {
             </div>
 
             <div style={{ marginBottom: '16px' }}>
-              <label style={labelStyle}>Lien analyse TradingView</label>
+              <label style={labelStyle}>🔗 Lien analyse TradingView</label>
               <input style={inputStyle} placeholder="https://www.tradingview.com/chart/..." value={form.tradingview_url || ''} onChange={e => setForm({...form, tradingview_url: e.target.value})} />
             </div>
 
@@ -222,7 +222,7 @@ export default function JournalPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                  {['Actif', 'Direction', 'Entrée', 'Sortie', 'P&L', 'Émotion', 'Date', 'Actions'].map(h => (
+                  {['Actif', 'Direction', 'Entrée', 'Sortie', 'P&L', 'Émotion', 'Date', 'Analyse', 'Actions'].map(h => (
                     <th key={h} style={{ padding: '12px 16px', textAlign: 'left', color: '#7a8299', fontWeight: '500' }}>{h}</th>
                   ))}
                 </tr>
@@ -243,6 +243,15 @@ export default function JournalPage() {
                     </td>
                     <td style={{ padding: '12px 16px' }}>{trade.emotion_before}/5</td>
                     <td style={{ padding: '12px 16px', color: '#7a8299' }}>{new Date(trade.opened_at).toLocaleDateString('fr-FR')}</td>
+                    <td style={{ padding: '12px 16px' }}>
+                      {trade.tradingview_url ? (
+                        <a href={trade.tradingview_url} target="_blank" rel="noopener noreferrer" style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '6px', padding: '4px 10px', color: '#3b82f6', fontSize: '12px', textDecoration: 'none', fontWeight: '500' }}>
+                          📈 Voir
+                        </a>
+                      ) : (
+                        <span style={{ color: '#404760', fontSize: '12px' }}>—</span>
+                      )}
+                    </td>
                     <td style={{ padding: '12px 16px' }}>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button onClick={() => openEditForm(trade)} style={{ background: 'rgba(0,229,176,0.1)', border: '1px solid rgba(0,229,176,0.2)', borderRadius: '6px', padding: '4px 10px', color: '#00e5b0', fontSize: '12px', cursor: 'pointer' }}>
