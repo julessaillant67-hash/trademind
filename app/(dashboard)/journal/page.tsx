@@ -11,7 +11,7 @@ export default function JournalPage() {
   const [form, setForm] = useState({
     asset: '', direction: 'LONG', entry_price: '', exit_price: '',
     lot_size: '', pnl: '', emotion_before: '3', emotion_after: '3',
-    followed_plan: true, notes: '', opened_at: new Date().toISOString().slice(0, 16),
+    followed_plan: true, notes: '', tradingview_url: '', opened_at: new Date().toISOString().slice(0, 16),
   })
 
   const supabase = createClient()
@@ -55,7 +55,7 @@ export default function JournalPage() {
       entry_price: trade.entry_price?.toString() || '', exit_price: trade.exit_price?.toString() || '',
       lot_size: trade.lot_size?.toString() || '', pnl: trade.pnl?.toString() || '',
       emotion_before: trade.emotion_before?.toString() || '3', emotion_after: trade.emotion_after?.toString() || '3',
-      followed_plan: trade.followed_plan ?? true, notes: trade.notes || '',
+      followed_plan: trade.followed_plan ?? true, notes: trade.notes || '', tradingview_url: trade.tradingview_url || '',
       opened_at: trade.opened_at ? new Date(trade.opened_at).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
     })
     setShowForm(true)
@@ -72,7 +72,7 @@ export default function JournalPage() {
       lot_size: form.lot_size ? parseFloat(form.lot_size) : null,
       pnl: form.pnl ? parseFloat(form.pnl) : null,
       emotion_before: parseInt(form.emotion_before), emotion_after: parseInt(form.emotion_after),
-      followed_plan: form.followed_plan, notes: form.notes,
+      followed_plan: form.followed_plan, notes: form.notes, tradingview_url: form.tradingview_url || null,
       opened_at: new Date(form.opened_at).toISOString(), source: 'manual'
     }
     if (editingTrade) {
@@ -190,6 +190,11 @@ export default function JournalPage() {
             <div style={{ marginBottom: '16px' }}>
               <label style={labelStyle}>Notes</label>
               <textarea style={{...inputStyle, height: '80px', resize: 'none'}} placeholder="Setup utilisé, observations..." value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} />
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={labelStyle}>Lien analyse TradingView</label>
+              <input style={inputStyle} placeholder="https://www.tradingview.com/chart/..." value={form.tradingview_url || ''} onChange={e => setForm({...form, tradingview_url: e.target.value})} />
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
