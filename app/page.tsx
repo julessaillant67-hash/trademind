@@ -33,13 +33,16 @@ export default function LandingPage() {
           TradeMind détecte tes biais psychologiques, analyse tes trades et t'aide à progresser. Fini les pertes inexpliquées.
         </p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link href="/register" style={{ padding: '14px 32px', borderRadius: '10px', background: '#00e5b0', color: '#000', textDecoration: 'none', fontSize: '16px', fontWeight: '700' }}>
-            Commencer gratuitement →
-          </Link>
-          <Link href="/login" style={{ padding: '14px 32px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', color: '#dfe3ed', textDecoration: 'none', fontSize: '16px' }}>
-            Se connecter
-          </Link>
-        </div>
+  <Link href="/register" style={{ padding: '14px 32px', borderRadius: '10px', background: '#00e5b0', color: '#000', textDecoration: 'none', fontSize: '16px', fontWeight: '700' }}>
+    Commencer gratuitement →
+  </Link>
+  <a href="/demo" style={{ padding: '14px 32px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.15)', color: '#dfe3ed', textDecoration: 'none', fontSize: '16px', fontWeight: '500' }}>
+    Essayer sans compte →
+  </a>
+  <Link href="/login" style={{ padding: '14px 32px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', color: '#dfe3ed', textDecoration: 'none', fontSize: '16px' }}>
+    Se connecter
+  </Link>
+</div>
       </div>
 
       {/* PROBLEME */}
