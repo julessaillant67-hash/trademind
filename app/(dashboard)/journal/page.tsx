@@ -92,8 +92,18 @@ export default function JournalPage() {
     loadTrades()
   }
 
-  const pnlAuto = calculerPnl(form.asset, form.direction, form.entry_price, form.exit_price, form.lot_size)
+  async function handleImportCSV(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await fetch('/api/trades/import', { method: 'POST', body: formData })
+    const data = await res.json()
+    if (data.imported) { alert(`✅ ${data.imported} trades importés !`); loadTrades() }
+    else alert('❌ Erreur import')
+  }
 
+  const pnlAuto = calculerPnl(form.asset, form.direction, form.entry_price, form.exit_price, form.lot_size)
   const inputStyle = { width: '100%', background: '#141920', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '10px 14px', color: '#dfe3ed', fontSize: '14px', outline: 'none', fontFamily: 'sans-serif' }
   const labelStyle = { color: '#7a8299', fontSize: '13px', display: 'block' as const, marginBottom: '6px' }
 
@@ -108,9 +118,15 @@ export default function JournalPage() {
             </div>
             <div style={{ color: '#7a8299', marginTop: '4px' }}>Journal de trading</div>
           </div>
-          <button onClick={openAddForm} style={{ background: '#00e5b0', border: 'none', borderRadius: '8px', padding: '10px 20px', color: '#000', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}>
-            + Ajouter un trade
-          </button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button onClick={openAddForm} style={{ background: '#00e5b0', border: 'none', borderRadius: '8px', padding: '10px 20px', color: '#000', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}>
+              + Ajouter un trade
+            </button>
+            <button onClick={() => document.getElementById('csvImport')?.click()} style={{ background: '#141920', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '10px 20px', color: '#7a8299', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}>
+              📥 Import CSV
+            </button>
+            <input id="csvImport" type="file" accept=".csv" style={{ display: 'none' }} onChange={handleImportCSV} />
+          </div>
         </div>
 
         {showForm && (
@@ -118,7 +134,6 @@ export default function JournalPage() {
             <div style={{ fontSize: '16px', fontWeight: '500', marginBottom: '20px' }}>
               {editingTrade ? '✏️ Modifier le trade' : '+ Nouveau trade'}
             </div>
-
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '16px' }}>
               <div>
                 <label style={labelStyle}>Actif</label>
@@ -186,22 +201,18 @@ export default function JournalPage() {
                 </select>
               </div>
             </div>
-
             <div style={{ marginBottom: '16px' }}>
               <label style={labelStyle}>Notes</label>
               <textarea style={{...inputStyle, height: '80px', resize: 'none'}} placeholder="Setup utilisé, observations..." value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} />
             </div>
-
             <div style={{ marginBottom: '16px' }}>
               <label style={labelStyle}>🔗 Lien analyse TradingView</label>
               <input style={inputStyle} placeholder="https://www.tradingview.com/chart/..." value={form.tradingview_url || ''} onChange={e => setForm({...form, tradingview_url: e.target.value})} />
             </div>
-
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
               <input type="checkbox" checked={form.followed_plan} onChange={e => setForm({...form, followed_plan: e.target.checked})} />
               <label style={{ color: '#7a8299', fontSize: '13px' }}>J'ai suivi mon plan de trading</label>
             </div>
-
             <div style={{ display: 'flex', gap: '10px' }}>
               <button onClick={handleSubmit} disabled={loading} style={{ background: '#00e5b0', border: 'none', borderRadius: '8px', padding: '10px 24px', color: '#000', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}>
                 {loading ? 'Enregistrement...' : editingTrade ? 'Mettre à jour' : 'Enregistrer'}
