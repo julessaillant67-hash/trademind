@@ -8,12 +8,9 @@ import { useRouter } from 'next/navigation'
 const navItems = [
   { href: '/dashboard', icon: '📊', label: 'Dashboard' },
   { href: '/journal', icon: '📝', label: 'Journal' },
-  { href: '/import', icon: '📥', label: 'Import CSV' },
-  { href: '/calendrier', icon: '📅', label: 'Calendrier P&L' },
-  { href: '/calendrier-eco', icon: '🗓️', label: 'Calendrier Éco.' },
+  { href: '/calendrier', icon: '📅', label: 'Calendrier' },
   { href: '/marches', icon: '📈', label: 'Marchés' },
   { href: '/analyse', icon: '🤖', label: 'Analyse IA' },
-  { href: '/rapport', icon: '📄', label: 'Rapport' },
   { href: '/settings', icon: '⚙️', label: 'Paramètres' },
 ]
 
